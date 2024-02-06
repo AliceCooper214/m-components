@@ -1,0 +1,18 @@
+.m-choose-icon-dialog-body-height {
+  .el-dialog__body {
+    height: 500px;
+    overflow: scroll;
+  }
+}
+
+.list-tabs__item {
+  .el-tabs__nav {
+    width: 100%;
+    display: flex;
+  }
+
+  .el-tabs__item {
+    flex: 1;
+    text-align: center;
+  }
+}
