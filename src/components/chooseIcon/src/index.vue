@@ -12,7 +12,7 @@
           @click="clickItem(item)"
         >
           <div class="text">
-            <component :is="item"></component>
+            <component :is="'el-icon-' + toLine(item)"></component>
           </div>
           <div class="icon">{{ item }}</div>
         </div>
