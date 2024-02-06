@@ -1,24 +1,49 @@
 <template>
-  <el-table :data="tableData" v-loading="isLoading" :element-loading-text="elementLoadingText"
-    :element-loading-spinner="elementLoadingSpinner" :element-loading-background="elementLoadingBackground"
-    :element-loading-svg="elementLoadingSvg" :element-loading-svg-view-box="elementLoadingSvgViewBox"
-    @row-click="rowClick" v-bind="$attrs">
-    <template v-for="(item, index) in tableOption" :key="index">
-      <el-table-column v-if="item.prop && !item.action" :label="item.label" :prop="item.prop" :width="item.width"
-        :align="item.align">
+  <el-table
+    v-bind="$attrs"
+    :data="tableData"
+    v-loading="loading"
+    :element-loading-text="elementLoadingText"
+    :element-loading-spinner="elementLoadingSpinner"
+    :element-loading-svg="elementLoadingSvg"
+    :element-loading-svg-view-box="elementLoadingSvgViewBox"
+    :element-loading-background="elementLoadingBackground"
+    @row-click="handleRowClick"
+  >
+    <template v-for="(item, index) in tableOptions" :key="index">
+      <el-table-column
+        :label="item.label"
+        :prop="item.prop"
+        :align="item.align"
+        :width="item.width"
+      >
         <template #default="scope">
           <template v-if="scope.row.rowEdit">
-            <el-input size="small" v-model="scope.row[item.prop!]"></el-input>
-          </template>
+            <el-input v-model="scope.row[item.prop!]"
+          /></template>
           <template v-else>
-            <template v-if="(scope.$index + scope.column.id) === currentEdit">
+            <template v-if="scope.$index + scope.column.id === currentEdit">
               <div style="display: flex">
-                <el-input size="small" v-model="scope.row[item.prop!]"></el-input>
-                <div>
-                  <slot name="cellEdit" v-if="$slots.cellEdit" :scope="scope"></slot>
-                  <div class="action-icon" v-else>
-                    <el-icon-check class="check" @click.stop="check(scope)"></el-icon-check>
-                    <el-icon-close class="close" @click.stop="close(scope)"></el-icon-close>
+                <el-input v-model="scope.row[item.prop!]" />
+                <div @click.stop="handleEditCellClick(scope)">
+                  <slot
+                    name="editCell"
+                    v-if="$slots.editCell"
+                    :scope="scope"
+                  ></slot>
+                  <div class="icons" v-else>
+                    <el-icon
+                      class="check"
+                      size="16"
+                      @click.stop="handleCheckIconClick(scope)"
+                      ><check
+                    /></el-icon>
+                    <el-icon
+                      class="close"
+                      size="16"
+                      @click.stop="handleCloseIconClick(scope)"
+                      ><close
+                    /></el-icon>
                   </div>
                 </div>
               </div>
@@ -26,14 +51,23 @@
             <template v-else>
               <slot v-if="item.slot" :name="item.slot" :scope="scope"></slot>
               <span v-else>{{ scope.row[item.prop!] }}</span>
-              <component :is="`el-icon-${toLine(editIcon)}`" class="edit" v-if="item.editable"
-                @click.stop="clickEditIcon(scope)"></component>
+              <el-icon
+                size="16"
+                @click.stop="handleEditIconClick(scope)"
+                class="edit-icon"
+                v-if="item.editable"
+                ><component :is="editIcon"></component
+              ></el-icon>
             </template>
           </template>
         </template>
       </el-table-column>
     </template>
-    <el-table-column :label="actionOption!.label" :width="actionOption!.width" :align="actionOption!.align">
+    <el-table-column
+      :label="actionOptions!.label"
+      :align="actionOptions!.align"
+      :width="actionOptions!.width"
+    >
       <template #default="scope">
         <slot name="editRow" :scope="scope" v-if="scope.row.rowEdit"></slot>
         <slot name="action" :scope="scope" v-else></slot>
@@ -41,198 +75,204 @@
     </el-table-column>
   </el-table>
 
-  <div v-if="pagination && !isLoading" class="pagination" :style="{ justifyContent }">
-    <el-pagination v-model:currentPage="currentPage" :page-sizes="pageSizes" :page-size="pageSize"
-      layout="total, sizes, prev, pager, next, jumper" :total="total" @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"></el-pagination>
+  <div class="pagination" v-if="pagination" :style="{ justifyContent }">
+    <el-pagination
+      :current-page="currentPage"
+      :page-size="pageSize"
+      :page-sizes="pageSizes"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="total"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
   </div>
 </template>
 
-<script lang='ts' setup>
-import { PropType, computed, ref, watch, onMounted } from 'vue'
-import { TableOptions } from './types'
-import { toLine } from '@/utils'
-import cloneDeep from 'lodash/cloneDeep'
-let props = defineProps({
-  // 表格配置选项
-  options: {
-    type: Array as PropType<TableOptions[]>,
-    required: true
-  },
+<script lang="ts" setup>
+import type { TableOptions } from "./types";
+import { ref, computed, onMounted, watch } from "vue";
+import cloneDeep from "lodash/cloneDeep";
+
+interface TableProps {
+  // 表格配置
+  options: TableOptions[];
   // 表格数据
-  data: {
-    type: Array,
-    required: true
-  },
+  data: any[];
+  // loading
+  loading?: boolean;
   // 加载文案
-  elementLoadingText: {
-    type: String,
-  },
+  elementLoadingText?: string;
   // 加载图标名
-  elementLoadingSpinner: {
-    type: String,
-  },
-  // 加载背景颜色
-  elementLoadingBackground: {
-    type: String,
-  },
-  // 加载图标是svg
-  elementLoadingSvg: {
-    type: String
-  },
-  // 加载团是svg的配置
-  elementLoadingSvgViewBox: {
-    type: String,
-  },
-  // 编辑显示的图标
-  editIcon: {
-    type: String,
-    default: 'Edit'
-  },
-  // 是否可以编辑行
-  isEditRow: {
-    type: Boolean,
-    default: false
-  },
-  // 编辑行按钮的标识
-  editRowIndex: {
-    type: String,
-    default: ''
-  },
+  elementLoadingSpinner?: string;
+  // 加载图标 svg
+  elementLoadingSvg?: string;
+  // svg 配置
+  elementLoadingSvgViewBox?: string;
+  // 加载背景色
+  elementLoadingBackground?: string;
+  // 可编辑单元格显示图标
+  editIcon?: string;
+  // 是否可编辑行
+  isEditRow?: boolean;
+  // 编辑行按钮标识
+  editRowIndex?: string;
   // 是否显示分页
-  pagination: {
-    type: Boolean,
-    default: false
-  },
-  // 显示分页的对齐方式
-  paginationAlign: {
-    type: String as PropType<'left' | 'center' | 'right'>,
-    default: 'left'
-  },
-  // 当前是第几页
-  currentPage: {
-    type: Number,
-    default: 1
-  },
-  // 当前一页多少条数据
-  pageSize: {
-    type: Number,
-    default: 10
-  },
-  // 显示分页数据多少条的选项
-  pageSizes: {
-    type: Array,
-    default: () => [10, 20, 30, 40]
-  },
-  // 数据总条数
-  total: {
-    type: Number,
-    default: 0
-  }
-})
-let emits = defineEmits(['confirm', 'cancel', 'update:editRowIndex', 'size-change', 'current-change'])
-// 分页的每一页数据变化
-let handleSizeChange = (val: number) => {
-  emits('size-change', val)
-  // console.log(val)
+  pagination?: boolean;
+  // 分页对齐方式
+  paginationAlign?: "left" | "center" | "right";
+  // 页数
+  currentPage?: number;
+  // 条数
+  pageSize?: number;
+  // 总数
+  total?: number;
+  // 每页数据选项
+  pageSizes?: number[];
 }
-// 分页页数改变
-let handleCurrentChange = (val: number) => {
-  emits('current-change', val)
-  // console.log(val)
-}
-// 当前被点击的单元格的标识
-let currentEdit = ref<string>('')
-// 拷贝一份表格的数据
-let tableData = ref<any[]>(cloneDeep(props.data))
-// 拷贝一份按钮的标识
-let cloneEditRowIndex = ref<string>(props.editRowIndex)
-// 监听的标识
-let watchData = ref<boolean>(false)
-// 如果data的数据变了 要重新给tableData赋值
-// 只需要监听一次就可以了
-let stopWatchData = watch(() => props.data, val => {
-  watchData.value = true
-  tableData.value = val
-  tableData.value.map(item => {
-    item.rowEdit = false
-  })
-  if (watchData.value) stopWatchData()
-}, { deep: true })
-// 监听
-watch(() => props.editRowIndex, val => {
-  if (val) cloneEditRowIndex.value = val
-})
-onMounted(() => {
-  tableData.value.map(item => {
-    item.rowEdit = false
-  })
-})
-// 过滤操作项之后的配置
-let tableOption = computed(() => props.options.filter(item => !item.action))
-// 操作项
-let actionOption = computed(() => props.options.find(item => item.action))
-// 是否在加载中
-let isLoading = computed(() => !props.data || !props.data.length)
-// 表格分页的排列方式
-let justifyContent = computed(() => {
-  if (props.paginationAlign === 'left') return 'flex-start'
-  else if (props.paginationAlign === 'right') return 'flex-end'
-  else return 'center'
-})
-// 点击编辑图标
-let clickEditIcon = (scope: any) => {
-  // 会做一个判断 判断是否当前单元格被点击了
-  // 拼接$index和column的id
-  currentEdit.value = scope.$index + scope.column.id
-  // console.log(currentEdit.value)
-}
-// 点击确认
-let check = (scope: any) => {
-  emits('confirm', scope)
-  currentEdit.value = ''
-}
-// 点击取消
-let close = (scope: any) => {
-  emits('cancel', scope)
-  currentEdit.value = ''
-}
-// 点击行的事件
-let rowClick = (row: any, column: any) => {
-  // 判断是否是点击的操作项
-  if (column.label === actionOption.value!.label) {
-    if (props.isEditRow && cloneEditRowIndex.value === props.editRowIndex) {
+
+const props = withDefaults(defineProps<TableProps>(), {
+  options: () => [],
+  data: () => [],
+  loading: false,
+  elementLoadingText: "",
+  elementLoadingSpinner: "",
+  elementLoadingSvg: "",
+  elementLoadingBackground: "",
+  elementLoadingSvgViewBox: "",
+  editIcon: "Edit",
+  isEditRow: false,
+  editRowIndex: "",
+  currentPage: 1,
+  pageSize: 10,
+  total: 0,
+  pageSizes: () => [10, 20, 30, 40, 50, 100],
+  pagination: false,
+  paginationAlign: "right",
+});
+
+// 分发事件
+const emits = defineEmits([
+  "confirm",
+  "cancel",
+  "update:editRowIndex",
+  "size-change",
+  "current-change",
+]);
+
+// 当前点击单元格
+const currentEdit = ref<string>("");
+// 拷贝 表格数据
+const tableData = ref<any[]>(cloneDeep(props.data));
+// 拷贝 编辑行标识
+const cloneEditRowIndex = ref<string>(cloneDeep(props.editRowIndex));
+// 过滤 操作列 后的 table配置
+const tableOptions = computed(() =>
+  props.options.filter((item) => !item.action)
+);
+// 找出 操作列 数据
+const actionOptions = computed(() => props.options.find((item) => item.action));
+// loading 根据 数据是否为空
+//const isLoading = computed(() => !props.data || !props.data.length)
+// 分页样式
+const justifyContent = computed(() => {
+  if (props.paginationAlign === "left") return "flex-start";
+  else if (props.paginationAlign === "right") return "flex-end";
+  else return "center";
+});
+
+// 编辑图标 点击
+const handleEditIconClick = (scope: any) => {
+  // 唯一标识
+  currentEdit.value = scope.$index + scope.column.id;
+};
+
+const handleEditCellClick = (scope: any) => {
+  currentEdit.value = "";
+};
+
+// 勾选图标 点击
+const handleCheckIconClick = (scope: any) => {
+  emits("confirm", scope);
+  currentEdit.value = "";
+};
+// 关闭图标 点击
+const handleCloseIconClick = (scope: any) => {
+  emits("cancel", scope);
+  currentEdit.value = "";
+};
+// 行点击
+const handleRowClick = (row: any, column: any) => {
+  // 操作列
+  if (column.label === actionOptions.value!.label) {
+    if (props.isEditRow && props.editRowIndex === cloneEditRowIndex.value) {
       // 编辑行的操作
-      row.rowEdit = !row.rowEdit
+      row.rowEdit = !row.rowEdit;
       // 重置其他数据的rowEdit
-      tableData.value.map(item => {
-        if (item !== row) item.rowEdit = false
-      })
+      tableData.value.forEach((item) => {
+        if (item !== row) {
+          item.rowEdit = false;
+        }
+      });
       // 重置按钮的标识
-      if (!row.rowEdit) emits('update:editRowIndex', '')
+      if (!row.rowEdit) {
+        emits("update:editRowIndex", "");
+      }
+      // 重置单个单元格先编辑，再点击整行编辑 取消后 未还原问题
+      currentEdit.value = "";
     }
   }
-}
+};
+
+// 条数改变
+const handleSizeChange = (val: number) => {
+  emits("size-change", val);
+};
+// 页数改变
+const handleCurrentChange = (val: number) => {
+  emits("current-change", val);
+};
+
+// 监听表格数据
+watch(
+  () => props.data,
+  (val) => {
+    tableData.value = cloneDeep(val);
+    tableData.value.forEach((item) => {
+      // 是否可编辑状态
+      item.rowEdit = false;
+    });
+  },
+  { deep: true }
+);
+// 监听父组件传过来的编辑标识
+watch(
+  () => props.editRowIndex,
+  (val) => {
+    if (val) {
+      cloneEditRowIndex.value = val;
+    }
+  }
+);
+
+onMounted(() => {
+  tableData.value.forEach((item) => {
+    // 是否可编辑状态
+    item.rowEdit = false;
+  });
+});
 </script>
 
-
-
-<style lang='scss' scoped>
-.edit {
-  width: 1em;
-  height: 1em;
+<style lang="scss" scoped>
+.edit-icon {
   position: relative;
   top: 2px;
   left: 12px;
   cursor: pointer;
 }
 
-.action-icon {
+.icons {
   display: flex;
-
-  svg {
-    width: 1em;
-    height: 1em;
+  .el-icon {
     margin-left: 8px;
     position: relative;
     top: 8px;
@@ -242,14 +282,14 @@ let rowClick = (row: any, column: any) => {
   .check {
     color: red;
   }
-
   .close {
     color: green;
   }
 }
 
 .pagination {
-  margin-top: 16px;
   display: flex;
+  align-items: center;
+  margin-top: 16px;
 }
 </style>
