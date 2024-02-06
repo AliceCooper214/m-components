@@ -1,13 +1,12 @@
-const path = require("path")
-const fs = require('fs')
+const path = require('path')
 const fsExtra = require('fs-extra')
-const { defineConfig, build } = require("vite")
+const fs = require('fs')
+const { defineConfig, build } = require('vite')
 const vue = require('@vitejs/plugin-vue')
 const vueJsx = require('@vitejs/plugin-vue-jsx')
 
-const entryDir = path.join(__dirname, '../packages')
-const srcDir = path.join(__dirname, '../src')
-const outputDir = path.join(__dirname, '../m-ui')
+const entryDir = path.resolve(__dirname, '../src/components')
+const outputDir = path.resolve(__dirname, '../m-ui')
 
 const baseConfig = defineConfig({
   configFile: false,
@@ -15,42 +14,88 @@ const baseConfig = defineConfig({
   plugins: [vue(), vueJsx()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, '../src')
-    }
+      "@": path.resolve(__dirname, "../src"),
+    },
   },
 })
 
 const rollupOptions = {
   external: ['vue', 'vue-router'],
   output: {
-    global: {
+    globals: {
       vue: 'Vue'
     }
-  },
+  }
 }
 
+//全量构建
 const buildAll = async () => {
-  const componentsDir = path.resolve(srcDir, './components')
-  const hooksDir = path.resolve(srcDir, './hooks')
-  fsExtra.copySync(componentsDir, path.resolve(entryDir, './hooks'))
-  fsExtra.copySync(hooksDir, entryDir)
-  await build({
+  await build(defineConfig({
     ...baseConfig,
     build: {
-      ...rollupOptions,
+      rollupOptions,
       lib: {
         entry: path.resolve(entryDir, 'index.ts'),
-        name: 'm-element-components',
-        fileName: 'm-element-components',
+        name: 'index',
+        fileName: 'index',
         formats: ['es', 'umd']
       },
       outDir: outputDir
     }
-  })
+  }))
 }
+
+const buildSingle = async (name) => {
+  await build(defineConfig({
+    ...baseConfig,
+    build: {
+      rollupOptions,
+      lib: {
+        entry: path.resolve(entryDir, name),
+        name: 'index',
+        fileName: 'index',
+        formats: ['es', 'umd']
+      },
+      outDir: path.resolve(outputDir, name)
+    }
+  }))
+}
+
+// 生成组件的 package.json 文件
+const createPackageJson = (name) => {
+  const fileStr = `{
+  "name": "${name}",
+  "version": "0.0.0",
+  "main": "index.umd.js",
+  "module": "index.es.js",
+  "style": "style.css"
+}`
+
+  fsExtra.outputFile(
+    path.resolve(outputDir, `${name}/package.json`),
+    fileStr,
+    'utf-8'
+  )
+}
+
 
 const buildLib = async () => {
   await buildAll()
+  // 获取组件名称组成的数组
+  const components = fs.readdirSync(entryDir).filter(name => {
+    const componentDir = path.resolve(entryDir, name)
+    const isDir = fs.lstatSync(componentDir).isDirectory()
+    return isDir && fs.readdirSync(componentDir).includes('index.ts')
+  })
+
+  // 循环一个一个组件构建
+  for (const name of components) {
+    // 构建单组件
+    await buildSingle(name)
+
+    // 生成组件的 package.json 文件
+    // createPackageJson(name)
+  }
 }
 
 buildLib()

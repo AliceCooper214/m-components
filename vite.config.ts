@@ -3,7 +3,7 @@ import { defineConfig, splitVendorChunkPlugin } from "vite";
 import vue from "@vitejs/plugin-vue";
 import vueJsx from "@vitejs/plugin-vue-jsx";
 
-export default defineConfig({
+export default {
   base: "/m-components/",
   publicDir: "public",
   resolve: {
@@ -25,4 +25,4 @@ export default defineConfig({
       },
     },
   },
-});
+}

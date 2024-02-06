@@ -3,8 +3,9 @@
 </template>
 
 <style lang="scss">
-@import '@/styles/ui';
-@import '@/styles/base';
+@import "@/styles/ui";
+@import "@/styles/base";
+
 .notification-popper-class {
   padding: 0 !important;
 }
