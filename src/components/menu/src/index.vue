@@ -1,17 +1,41 @@
 <template>
-  <el-menu class="el-menu-vertical-demo" :default-active="defaultActive" :router="router" v-bind="$attrs">
+  <el-menu
+    class="el-menu-vertical-demo"
+    :default-active="defaultActive"
+    :router="router"
+    v-bind="$attrs"
+  >
     <template v-for="(item, i) in data" :key="i">
-      <el-menu-item v-if="!item[children] || !item[children].length" :index="item[index]">
-        <component v-if="item[icon]" :is="`el-icon-${toLine(item[icon])}`"></component>
+      <el-menu-item
+        v-if="!item[children] || !item[children].length"
+        :index="item[index]"
+      >
+        <component
+          v-if="item[icon]"
+          :is="`el-icon-${toLine(item[icon])}`"
+        ></component>
         <span>{{ item[name] }}</span>
       </el-menu-item>
-      <el-sub-menu v-if="item[children] && item[children].length" :index="item[index]">
+      <el-sub-menu
+        v-if="item[children] && item[children].length"
+        :index="item[index]"
+      >
         <template #title>
-          <component v-if="item[icon]" :is="`el-icon-${toLine(item[icon])}`"></component>
+          <component
+            v-if="item[icon]"
+            :is="`el-icon-${toLine(item[icon])}`"
+          ></component>
           <span>{{ item[name] }}</span>
         </template>
-        <el-menu-item v-for="(item1, index1) in item[children]" :key="index1" :index="item1.index">
-          <component v-if="item1[icon]" :is="`el-icon-${toLine(item1[icon])}`"></component>
+        <el-menu-item
+          v-for="(item1, index1) in item[children]"
+          :key="index1"
+          :index="item1.index"
+        >
+          <component
+            v-if="item1[icon]"
+            :is="`el-icon-${toLine(item1[icon])}`"
+          ></component>
           <span>{{ item1[name] }}</span>
         </el-menu-item>
       </el-sub-menu>
@@ -20,39 +44,39 @@
 </template>
 
 <script lang="ts" setup>
-import { toLine } from '@/utils';
-import { PropType } from 'vue';
+import { toLine } from "@/utils";
+import { PropType } from "vue";
 
 defineProps({
   data: {
     type: Array as PropType<any[]>,
-    required: true
+    required: true,
   },
   defaultActive: {
     type: String,
-    default: ''
+    default: "",
   },
   router: {
     type: Boolean,
-    default: false
+    default: false,
   },
   name: {
     type: String,
-    default: 'name'
+    default: "name",
   },
   index: {
     type: String,
-    default: 'index'
+    default: "index",
   },
   icon: {
     type: String,
-    default: 'icon'
+    default: "icon",
   },
   children: {
     type: String,
-    default: 'children'
+    default: "children",
   },
-})
+});
 </script>
 
 <style lang="scss" scoped>

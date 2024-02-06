@@ -5,9 +5,14 @@
   <div class="m-choose-icon-dialog-body-height">
     <el-dialog :title="title" v-model="dialogVisible">
       <div class="container">
-        <div class="item" v-for="(item, index) in Object.keys(ElIcons)" :key="index" @click="clickItem(item)">
+        <div
+          class="item"
+          v-for="(item, index) in Object.keys(ElIcons)"
+          :key="index"
+          @click="clickItem(item)"
+        >
           <div class="text">
-            <component :is="`el-icon-${toLine(item)}`"></component>
+            <component :is="item"></component>
           </div>
           <div class="icon">{{ item }}</div>
         </div>
@@ -17,35 +22,41 @@
 </template>
 
 <script lang="ts" setup>
-import * as ElIcons from '@element-plus/icons-vue'
-import { watch, ref } from 'vue'
-import { toLine } from '@/utils';
-import { useCopy } from '@/hooks/useCopy';
+import * as ElIcons from "@element-plus/icons-vue";
+import { watch, ref } from "vue";
+import { toLine } from "@/utils";
+import { useCopy } from "@/hooks/useCopy";
 
 let props = defineProps<{
-  title: string,
-  visible: boolean,
-}>()
-let emits = defineEmits(['update:visible'])
+  title: string;
+  visible: boolean;
+}>();
+let emits = defineEmits(["update:visible"]);
 let dialogVisible = ref<boolean>(props.visible);
 
 let handleClick = () => {
-  emits('update:visible', !props.visible)
-}
+  emits("update:visible", !props.visible);
+};
 
 let clickItem = (item: string) => {
-  let text = `<el-icon-${toLine(item)} />`
-  useCopy(text)
-  dialogVisible.value = false
-}
+  let text = `<el-icon-${toLine(item)} />`;
+  useCopy(text);
+  dialogVisible.value = false;
+};
 
-watch(() => props.visible, val => {
-  dialogVisible.value = val
-})
+watch(
+  () => props.visible,
+  (val) => {
+    dialogVisible.value = val;
+  }
+);
 
-watch(() => dialogVisible.value, val => {
-  emits('update:visible', val)
-})
+watch(
+  () => dialogVisible.value,
+  (val) => {
+    emits("update:visible", val);
+  }
+);
 </script>
 
 <style lang="scss" scoped>

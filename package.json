@@ -11,14 +11,14 @@
     "type:tsc": "vue-tsc --noEmit -p tsconfig.app.json --composite false"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^2.0.10",
+    "@element-plus/icons-vue": "^2.1.0",
     "@fullcalendar/core": "^6.1.9",
     "@fullcalendar/daygrid": "^6.1.9",
     "@fullcalendar/interaction": "^6.1.9",
     "@fullcalendar/vue3": "^6.1.9",
     "async-validator": "^4.2.5",
     "axios": "^1.1.3",
-    "element-plus": "^2.2.19",
+    "element-plus": "^2.4.2",
     "fs-extra": "^10.1.0",
     "lodash": "^4.17.21",
     "vue": "^3.2.41",
