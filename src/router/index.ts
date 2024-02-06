@@ -70,7 +70,7 @@ const routes: RouteRecordRaw[] = [
 
 const router = createRouter({
   routes,
-  history: createWebHashHistory("/m-components/"),
+  history: createWebHistory("/m-components/"),
 });
 
 export default router;
