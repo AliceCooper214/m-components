@@ -59,7 +59,7 @@ const renderEventContent = (arg: EventContentArg) => {
     .replace("下午", "")
     .replace("时", "");
   return `
-         <img src="/logo.png" style="width:20px;height:20px;">
+         <img src="/m-components/logo.png" style="width:20px;height:20px;">
          <div>开始时间: ${start}</div>
          <div>结束时间: ${end}</div>
          <div>标题: ${arg.event._def.title}</div>
