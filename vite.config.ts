@@ -17,6 +17,7 @@ export default {
   },
   build: {
     outDir: "dist/m-components",
+    splitVendorChunkPlugin: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -25,4 +26,4 @@ export default {
       },
     },
   },
-}
+};
